@@ -11,33 +11,45 @@ function Get<T>(key: string): T {
 }
 
 function GetProperty<T>(path: string): T {
-    const parsedPath: string[] = path.split('.')
-    const payload: object = Get<Object>(parsedPath[0])
-    let depth: number = 0
-    let result: T
+    let parsedPath: string[] = path.split('.')
+    const payload: Record <string, any> = GetIntermediatePayload(parsedPath)
+    parsedPath = parsedPath.slice(1)
 
-    if (Object.keys.length === 0)
-        throw new InvalidStoredValueError(`${parsedPath[0]} returned an empty object`)
-
-    parsedPath.slice(1)
-
-    return DigToProperty<T>(payload, parsedPath, depth)
+    return DigToProperty<T>(payload, parsedPath, 0)
 }
 
-function DigToProperty<T>(obj: Object, parsedPath: string[], depth: number, depthLimit: number = 10) {
-    if(!obj)
-        throw new InvalidStoredValueError('undefined')
+function GetIntermediatePayload(parsedPath: string[]) {
+    if (!parsedPath[0] || parsedPath[0] === '')
+        throw new InvalidStoredValueError('property path')
+    
+    const payload: Record<string, any> = Get<Record<string, any>>(parsedPath[0])
+    
+    if (Object.keys(payload).length === 0)
+        throw new InvalidStoredValueError('IntermediaPayloadPath')
 
-    if (parsedPath.length === 0){
-        parsedPath.slice(1)
-        return DigToProperty(obj, parsedPath, depthLimit, depth+1)
+    return payload
+}
+
+function DigToProperty<T>(
+    obj: Record<string, any>,
+    parsedPath: string[],
+    depth: number,
+    depthLimit: number = 10
+) {
+    if (!obj) throw new InvalidStoredValueError('Record<string, any> key')
+    if (!parsedPath[0]) throw new Error('Reached the end of the path without a result')
+
+    if (parsedPath.length === 0) {
+        return obj as T
+    } else {
+        const [key, ...reducedParsedPath] = parsedPath
+        obj = obj[key]
+        return DigToProperty(obj, reducedParsedPath, depth + 1, depthLimit)
     }
-    else return obj as T
 }
 
 class InvalidStoredValueError extends Error {
     constructor(key: string) {
-        console.log()
         super(`Stored value ${key} is invalid.`)
     }
 }

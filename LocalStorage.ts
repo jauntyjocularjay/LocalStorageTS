@@ -7,6 +7,7 @@ function Set<T>(key: string, payload: T): T {
     return payload
 }
 
+
 function Get<T>(key: string): T {
     const payload = localStorage.getItem(key)
     if (!payload) throw new InvalidStoredValueError(key)
